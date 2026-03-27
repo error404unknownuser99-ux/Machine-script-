@@ -1,24 +1,19 @@
 #!/bin/bash
-echo "🚀 Starting Universal Tmate System..."
+echo "🚀 Initiating God-Mode Tmate Setup..."
 
-# 1. OS को पहचानो और Tmate इंस्टॉल करो 🛠️
-if command -v tmate &> /dev/null; then
-    echo "✅ Tmate is already here!"
-elif [ -f /etc/alpine-release ]; then
-    echo "🗻 Alpine Linux Detected!"
-    sudo apk update && sudo apk add tmate --no-cache
-elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
-    echo "🐧 Ubuntu/Debian Detected!"
-    sudo apt update && sudo apt install tmate -y
-else
-    echo "⚠️ Unknown OS! Trying to download binary..."
-    wget -q https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
-    tar -xf tmate-2.4.0-static-linux-amd64.tar.xz
-    sudo mv tmate-2.4.0-static-linux-amd64/tmate /usr/local/bin/
+# 1. भाड़ में जाए APT/APK, सीधा Binary डाउनलोड मारो! 😈
+if ! command -v tmate &> /dev/null; then
+    echo "📥 Forcing Tmate Installation via Static Binary..."
+    wget -q https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz -O /tmp/tmate.tar.xz
+    tar -xf /tmp/tmate.tar.xz -C /tmp/
+    sudo mv /tmp/tmate-2.4.0-static-linux-amd64/tmate /usr/local/bin/tmate
+    sudo chmod +x /usr/local/bin/tmate
+    rm -rf /tmp/tmate*
+    echo "✅ Tmate Forced Install Complete!"
 fi
 
-# 2. Tmate सेशन लॉन्च करो 🛰️
-echo "🛰️ Launching Tmate..."
+# 2. Tmate सेशन लॉन्च करो (बिना रुके) 🛰️
+echo "🛰️ Launching Tmate Session..."
 tmate -S /tmp/tmate.sock new-session -d
 tmate -S /tmp/tmate.sock wait tmate-ready
 
@@ -34,12 +29,10 @@ else
     echo "🔑 SSH: $TMATE_SSH"
 
     # 4. Render को पिंग मारो 📡
-    # पक्का कर लो कि RENDER_API_URL का एंडपॉइंट सही है
     CODESPACE_NAME=$(hostname)
-    FINAL_URL="Web: $TMATE_WEB | SSH: $TMATE_SSH"
+    FINAL_URL="$TMATE_WEB" # UI पर सिर्फ Web URL दिखाएंगे, साफ लगेगा
     
     echo "📡 Sending links to Render..."
-    # यहाँ /update-url के पीछे स्लैश (/) का ध्यान रखना
     curl -X POST "$RENDER_API_URL/update-url" \
          -H "Content-Type: application/json" \
          -d "{\"id\": \"$CODESPACE_NAME\", \"url\": \"$FINAL_URL\"}"
