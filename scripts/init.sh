@@ -1,26 +1,25 @@
 #!/bin/bash
-echo "🚀 Phoenix Engine: Codespace Initialization Started..."
+echo "🚀 Phoenix Engine: Starting Full Auto-Setup..."
 
-# 1. Hugging Face CLI इंस्टॉल करना
-pip install -U "huggingface_hub[cli]"
+# 1. Alpine के लिए ज़रूरी टूल्स डालना (Silent mode)
+sudo apk update
+sudo apk add python3 py3-pip curl wget tar libc6-compat --no-cache
 
-# 2. चेक करो कि क्या HF Dataset पर पुराना बैकअप मौजूद है?
+# 2. Python के नखरे खत्म करना (--break-system-packages के साथ)
+echo "🐍 Installing Hugging Face Hub..."
+pip install huggingface_hub --break-system-packages --no-cache-dir
+
+# 3. चेक करो कि क्या HF Dataset पर पुराना बैकअप है?
 echo "📥 Checking for existing backup on Hugging Face..."
+# $HF_REPO_ID और $HF_TOKEN हमें Render से मिल जाएंगे
+huggingface-cli download $HF_REPO_ID workspace_backup.tar.gz --repo-type dataset --token $HF_TOKEN --local-dir /tmp/ || echo "⚠️ No backup found. Starting fresh!"
 
-# HF CLI से फाइल डाउनलोड करने की कोशिश (अगर फाइल नहीं होगी तो ये एरर देगा, पर हम उसे इग्नोर करेंगे)
-huggingface-cli download $HF_REPO_ID workspace_backup.tar.gz --repo-type dataset --token $HF_TOKEN --local-dir /tmp/ || echo "⚠️ No previous backup found. Starting fresh!"
-
-# 3. अगर बैकअप मिल गया, तो उसे रिस्टोर करो
+# 4. अगर बैकअप मिल गया, तो उसे रिस्टोर करो
 if [ -f "/tmp/workspace_backup.tar.gz" ]; then
-    echo "📦 Backup found! Restoring data..."
-    
-    # एक्सट्रैक्ट करो (मान लो हम /workspaces/my-work-repo के अंदर का डेटा बैकअप ले रहे हैं)
-    # --strip-components 1 यूज़ कर रहे हैं ताकि फोल्डर स्ट्रक्चर सही बैठे
+    echo "📦 Backup found! Restoring your soul..."
     tar -xzvf /tmp/workspace_backup.tar.gz -C /workspaces/
-    
-    # कचरा साफ़ करो
     rm /tmp/workspace_backup.tar.gz
-    echo "✅ Restore Complete! Welcome back, Baap!"
+    echo "✅ Restore Complete!"
 else
-    echo "🌱 Fresh Codespace Ready!"
+    echo "🌱 Fresh Start!"
 fi
