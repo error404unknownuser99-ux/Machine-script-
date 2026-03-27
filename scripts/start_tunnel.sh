@@ -1,32 +1,46 @@
 #!/bin/bash
-echo "🚀 Starting Tmate Terminal Sharing..."
+echo "🚀 Starting Universal Tmate System..."
 
-# 1. Tmate इंस्टॉल करना (Ubuntu/Alpine compatible)
-if ! command -v tmate &> /dev/null
-then
-    echo "📥 Installing Tmate..."
-    sudo apt update && sudo apt install ttyd tmate -y || sudo apk add tmate --no-cache
+# 1. OS को पहचानो और Tmate इंस्टॉल करो 🛠️
+if command -v tmate &> /dev/null; then
+    echo "✅ Tmate is already here!"
+elif [ -f /etc/alpine-release ]; then
+    echo "🗻 Alpine Linux Detected!"
+    sudo apk update && sudo apk add tmate --no-cache
+elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
+    echo "🐧 Ubuntu/Debian Detected!"
+    sudo apt update && sudo apt install tmate -y
+else
+    echo "⚠️ Unknown OS! Trying to download binary..."
+    wget -q https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz
+    tar -xf tmate-2.4.0-static-linux-amd64.tar.xz
+    sudo mv tmate-2.4.0-static-linux-amd64/tmate /usr/local/bin/
 fi
 
-# 2. Tmate को बैकग्राउंड में चालू करना
-echo "🛰️ Launching Tmate session..."
+# 2. Tmate सेशन लॉन्च करो 🛰️
+echo "🛰️ Launching Tmate..."
 tmate -S /tmp/tmate.sock new-session -d
 tmate -S /tmp/tmate.sock wait tmate-ready
 
-# 3. Tmate का Web URL और SSH लिंक निकालना
+# 3. जादुई लिंक निकालो 🔑
 TMATE_WEB=$(tmate -S /tmp/tmate.sock display -p '#{tmate_web}')
 TMATE_SSH=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}')
 
-echo "✅ Tmate Ready!"
-echo "🌐 Web: $TMATE_WEB"
-echo "🔑 SSH: $TMATE_SSH"
+if [ -z "$TMATE_WEB" ]; then
+    echo "❌ Error: Tmate failed to generate link!"
+else
+    echo "✅ Tmate Live!"
+    echo "🌐 Web: $TMATE_WEB"
+    echo "🔑 SSH: $TMATE_SSH"
 
-# 4. Render API को ये दोनों लिंक भेजना (ताकि UI पर दिखें)
-# हम दोनों लिंक्स को एक साथ भेज रहे हैं
-FINAL_URL="Web: $TMATE_WEB | SSH: $TMATE_SSH"
-CODESPACE_NAME=$(hostname)
-
-echo "📡 Sending Tmate links to Render..."
-curl -X POST "$RENDER_API_URL/update-url" \
-     -H "Content-Type: application/json" \
-     -d "{\"id\": \"$CODESPACE_NAME\", \"url\": \"$FINAL_URL\"}"
+    # 4. Render को पिंग मारो 📡
+    # पक्का कर लो कि RENDER_API_URL का एंडपॉइंट सही है
+    CODESPACE_NAME=$(hostname)
+    FINAL_URL="Web: $TMATE_WEB | SSH: $TMATE_SSH"
+    
+    echo "📡 Sending links to Render..."
+    # यहाँ /update-url के पीछे स्लैश (/) का ध्यान रखना
+    curl -X POST "$RENDER_API_URL/update-url" \
+         -H "Content-Type: application/json" \
+         -d "{\"id\": \"$CODESPACE_NAME\", \"url\": \"$FINAL_URL\"}"
+fi
