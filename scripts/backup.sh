@@ -1,11 +1,14 @@
 #!/bin/bash
-echo "⏰ 50 Hours Milestone! Backing up everything..."
+echo "⏰ 50 Hours Milestone! Backing up your hard work..."
 
-# 1. Zip बनाओ
-tar -czvf /tmp/workspace_backup.tar.gz -C /workspaces/ .
+# 📦 Zip बनाओ पर 'scripts' और '.git' को छोड़ दो (ताकि पुराना कोड वापस ना आए)
+tar -czvf /tmp/workspace_backup.tar.gz \
+    --exclude='./Machine-script-/scripts' \
+    --exclude='./Machine-script-/.git' \
+    -C /workspaces/ .
 
-# 2. 'hf' का इस्तेमाल करके अपलोड मारो
+# ⬆️ Hugging Face पर अपलोड
 hf upload $HF_REPO_ID /tmp/workspace_backup.tar.gz workspace_backup.tar.gz --repo-type dataset --token $HF_TOKEN
 
 rm /tmp/workspace_backup.tar.gz
-echo "✅ Backup Complete! 😈"
+echo "✅ Fresh Soul Saved (No Old Scripts)! 😈"
